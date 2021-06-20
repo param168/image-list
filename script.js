@@ -21,57 +21,54 @@ const listOfImages = [
     }
 ];
 
-
-let globalImageId = 0;
-
-window.addEventListener("keydown", (event) => {
-    if(event.key == "ArrowUp" && globalImageId > 0) showImage(globalImageId - 1);
-    else if(event.key == "ArrowDown" && globalImageId < listOfImages.length - 1) showImage(globalImageId + 1);
-});
+let mainList = document.querySelector(".imageList");
+let mainImage = document.querySelector(".mainImage");
+let captionForImage = document.querySelector(".captionForImage");
 
 
-listOfImages.forEach((item,index) => {
-    let imageUrl =  item["source"];
-    let imageName = item["title"];
+let displayIndex = 0; 
 
+listOfImages.forEach((image,index) => {
     let listEntry = document.createElement("li");
+    let imageEntry = document.createElement("img");
+    let imageName = document.createElement("p");
 
-    let smallImage = document.createElement("img");
-    smallImage.src = imageUrl;
-    smallImage.alt = imageName;
+    imageEntry.src = image.source;
+    imageEntry.alt = image.title;
 
-    let imageCaption = document.createElement("p");
-    imageCaption.innerText = imageName;
+    let truncatedString = image.title;
+    if(truncatedString.length > 25) {
+        let prefix = truncatedString.slice(0,26);
+        prefix += "....";
+        prefix += truncatedString.slice(truncatedString.length - 9, truncatedString.length);
+        truncatedString = prefix;
+    }
+    imageName.innerHTML = truncatedString;
+    
 
-    listEntry.append(smallImage);
-    listEntry.append(imageCaption);
+    listEntry.append(imageEntry);
+    listEntry.append(imageName);
 
     listEntry.addEventListener("click", () => {
         showImage(index);
     });
-    const imageList = document.querySelector(".imageList");
-    imageList.append(listEntry);
+    mainList.append(listEntry);
 });
-
-
-const showImage = function (imageId) {
-    let imageMenu = document.querySelector(".imageList");
-    
-    let currentImage = imageMenu.childNodes[globalImageId];
-    currentImage.classList.remove("current");
-
-    let newImage = imageMenu.childNodes[imageId];
-    newImage.classList.add("current");
-
-    document.querySelector(".display").src = listOfImages[imageId]["source"];
-    document.querySelector(".display").alt = listOfImages[imageId]["title"];
-    document.querySelector(".caption").innerText = listOfImages[imageId]["title"];
-    globalImageId = imageId;
-};
 
 showImage(0);
 
 
+document.addEventListener("keydown", event => {
+    if(event.key == "ArrowUp" && displayIndex > 0) showImage(displayIndex - 1);
+    else if(event.key == "ArrowDown" && displayIndex < listOfImages.length - 1) showImage(displayIndex + 1);
+})
 
 
-
+function showImage(newIndex) {
+    mainList.childNodes[displayIndex].classList.remove("active");
+    mainList.childNodes[newIndex].classList.add("active");
+    mainImage.src = listOfImages[newIndex].source;
+    mainImage.alt = listOfImages[newIndex].title;
+    captionForImage.innerHTML = listOfImages[newIndex].title;
+    displayIndex = newIndex;
+}
