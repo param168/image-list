@@ -1,74 +1,142 @@
-const listOfImages = [
-    {
-        "source": "https://images.unsplash.com/photo-1561948955-570b270e7c36?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        "title": "cat.jpeg"
-    },
-    {
-        "source": "https://images.unsplash.com/photo-1606787620819-8bdf0c44c293?ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        "title": "cooking couple shoot portofilio(1).jpg"
-    },
-    {
-        "source": "https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        "title": "bali-kelingking-beach-plastic-removal-drive.key"
-    },
-    {
-        "source": "https://images.unsplash.com/photo-1623206837956-07dab21608f6?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        "title": "NextByk Investor Pitch 2021.ppt"
-    },
-    {
-        "source": "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-        "title": "interns-performance-report-june-2021.key"
-    }
-];
+import listOfImages from "./assets/imageDetails.js";
 
 let mainList = document.querySelector(".imageList");
-let mainImage = document.querySelector(".mainImage");
-let captionForImage = document.querySelector(".captionForImage");
+let fullScreen = document.querySelector(".fullScreen");
 
+let displayIndex = 0;
 
-let displayIndex = 0; 
+function truncatedString() {
+	document.querySelectorAll("li").forEach((item, index) => {
+		let paragraph = item.querySelector("p");
+		let imageName = listOfImages[index]["title"];
+		paragraph.textContent = imageName;
 
-listOfImages.forEach((image,index) => {
-    let listEntry = document.createElement("li");
-    let imageEntry = document.createElement("img");
-    let imageName = document.createElement("p");
+		if (paragraph.scrollWidth <= paragraph.clientWidth) return;
 
-    imageEntry.src = image.source;
-    imageEntry.alt = image.title;
+		let low = 0,
+			high = imageName.length,
+			finalResult = "";
 
-    let truncatedString = image.title;
-    if(truncatedString.length > 25) {
-        let prefix = truncatedString.slice(0,26);
-        prefix += "....";
-        prefix += truncatedString.slice(truncatedString.length - 9, truncatedString.length);
-        truncatedString = prefix;
-    }
-    imageName.innerHTML = truncatedString;
-    
+		while (low < high) {
+			let mid = Math.floor((low + high) / 2.0);
+			let leftPart = Math.floor(mid / 2.0);
+			let rightPart = Math.ceil(mid / 2.0);
+			paragraph.innerHTML =
+				imageName.substr(0, leftPart) +
+				"..." +
+				imageName.substr(imageName.length - rightPart, rightPart);
+			if (item.scrollWidth <= item.clientWidth) {
+				finalResult = paragraph.textContent;
+				low = mid + 1;
+			} else {
+				high = mid - 1;
+			}
+		}
+		paragraph.innerHTML = finalResult;
+	});
+}
 
-    listEntry.append(imageEntry);
-    listEntry.append(imageName);
+//Create Element for list Entry
+function createListElement(image, index) {
+	let listEntry = document.createElement("li");
+	let imageEntry = document.createElement("img");
+	let imageName = document.createElement("p");
 
-    listEntry.addEventListener("click", () => {
-        showImage(index);
-    });
-    mainList.append(listEntry);
+	imageEntry.src = image.source;
+	imageEntry.alt = image.alt;
+
+	imageName.innerHTML = image.title;
+	imageName.setAttribute("aria-hidden", "true");
+
+	listEntry.append(imageEntry);
+	listEntry.append(imageName);
+
+	listEntry.setAttribute("role", "tab");
+	listEntry.setAttribute(
+		"aria-controls",
+		"panel" + image.title.trim().split(" ").join("")
+	);
+	listEntry.setAttribute("tabindex", "0");
+	listEntry.setAttribute("aria-selected", "false");
+	listEntry.setAttribute("id", image.title.trim().split(" ").join(""));
+
+	listEntry.addEventListener("click", () => {
+		showImage(index);
+	});
+	listEntry.addEventListener("keydown", (event) => {
+		if (event.key == "ArrowUp" || event.key == "ArrowLeft") {
+			if (displayIndex == 0) showImage(listOfImages.length - 1);
+			else showImage(displayIndex - 1);
+		} else if (event.key == "ArrowDown" || event.key == "ArrowRight")
+			showImage((displayIndex + 1) % listOfImages.length);
+		else if (event.key == "Enter") document.activeElement.click();
+	});
+	return listEntry;
+}
+
+//Create Element for main Image
+function createPanelElement(image) {
+	let displayFigure = document.createElement("figure");
+	displayFigure.setAttribute("class", "imageContainer");
+	displayFigure.setAttribute("role", "tabpanel");
+	displayFigure.setAttribute("tabindex", "0");
+	displayFigure.setAttribute(
+		"id",
+		"panel" + image.title.trim().split(" ").join("")
+	);
+
+	let displayImage = document.createElement("img");
+	displayImage.setAttribute("class", "mainImage");
+	displayImage.src = image.source;
+	displayImage.alt = image.alt;
+	displayImage.title = image.alt;
+
+	let displayCaption = document.createElement("figcaption");
+	displayCaption.setAttribute("class", "captionForImage");
+	displayCaption.textContent = image.title;
+
+	displayFigure.append(displayImage);
+	displayFigure.append(displayCaption);
+
+	displayFigure.setAttribute("hidden", "true");
+	displayFigure.setAttribute(
+		"aria-labelledby",
+		image.title.trim().split(" ").join("")
+	);
+
+	return displayFigure;
+}
+
+listOfImages.forEach((image, index) => {
+	mainList.append(createListElement(image, index));
+	fullScreen.append(createPanelElement(image));
 });
 
+truncatedString();
+window.addEventListener("resize", truncatedString);
 showImage(0);
-
-
-document.addEventListener("keydown", event => {
-    if(event.key == "ArrowUp" && displayIndex > 0) showImage(displayIndex - 1);
-    else if(event.key == "ArrowDown" && displayIndex < listOfImages.length - 1) showImage(displayIndex + 1);
-})
-
+console.log(document.querySelector(".fullScreen"));
+document.querySelector(".fullScreen").click();
+// document.addEventListener("keydown", (event) => {
+// 	if (event.key == "ArrowUp" || event.key == "ArrowLeft") {
+// 		if (displayIndex == 0) showImage(listOfImages.length - 1);
+// 		else showImage(displayIndex - 1);
+// 	} else if (event.key == "ArrowDown" || event.key == "ArrowRight")
+// 		showImage((displayIndex + 1) % listOfImages.length);
+// 	else if (event.key == "Enter") document.activeElement.click();
+// });
 
 function showImage(newIndex) {
-    mainList.childNodes[displayIndex].classList.remove("active");
-    mainList.childNodes[newIndex].classList.add("active");
-    mainImage.src = listOfImages[newIndex].source;
-    mainImage.alt = listOfImages[newIndex].title;
-    captionForImage.innerHTML = listOfImages[newIndex].title;
-    displayIndex = newIndex;
+	mainList.childNodes[displayIndex].classList.remove("active");
+	mainList.childNodes[displayIndex].setAttribute("aria-selected", "false");
+
+	mainList.childNodes[newIndex].classList.add("active");
+	mainList.childNodes[newIndex].setAttribute("aria-selected", "true");
+	mainList.childNodes[newIndex].focus();
+
+	document
+		.querySelectorAll("figure")
+		[displayIndex].setAttribute("hidden", "true");
+	document.querySelectorAll("figure")[newIndex].removeAttribute("hidden");
+	displayIndex = newIndex;
 }
